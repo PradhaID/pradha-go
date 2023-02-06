@@ -2,8 +2,9 @@ package file
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -11,30 +12,84 @@ import (
 )
 
 func Upload(c *fiber.Ctx) error {
-	path := "../../"
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, file := range files {
-		fmt.Println(file.Name(), file.IsDir())
-	}
-
-	year := time.Now().Year()
-	month := time.Now().Month()
+	path := os.Getenv("UPLOAD_PATH")
 
 	fileID := c.FormValue("id")
-	fileType := c.FormValue("type")
-	if file, err := c.FormFile("file"); err == nil {
-		subPath := strconv.Itoa(year) + "/" + strconv.Itoa(int(month))
-		path = path + subPath
-		from := c.OriginalURL()
-		fmt.Println(year, month, fileID, fileType, from, path)
-		fmt.Println(file.Filename)
+
+	folder := ""
+	if _, err := os.Stat(path + "domain/" + c.FormValue("app")); !os.IsNotExist(err) {
+		folder = path + "domain/" + c.FormValue("app") + "/public/uploads/"
+	} else {
+		log.Println(path+"domain/"+c.FormValue("app"), "Not Exists")
 	}
 
-	return c.Status(200).JSON(fiber.Map{
-		"status":  true,
-		"message": "Upload Page",
-	})
+	if _, err := os.Stat(path + "subdomain/" + c.FormValue("app")); !os.IsNotExist(err) {
+		folder = path + "subdomain/" + c.FormValue("app") + "/public/uploads/"
+	} else {
+		log.Println(path+"subdomain/"+c.FormValue("app"), "Not Exists")
+	}
+
+	if folder != "" {
+		if file, err := c.FormFile("file"); err == nil {
+			year := time.Now().Year()
+			month := time.Now().Month()
+			m := fmt.Sprintf("%02d", int(month))
+
+			folder = folder + strconv.Itoa(year) + "/" + m + "/"
+
+			// check or create folder
+			err := os.MkdirAll(folder, os.ModePerm)
+			if err != nil {
+				log.Println("Create folder error: ", err)
+				return c.Status(401).JSON(fiber.Map{
+					"status":  false,
+					"message": "Failed to create folder",
+				})
+			}
+
+			fileName := file.Filename
+			// check duplicate file name
+			i := 1
+			for {
+				if _, err := os.Stat(folder + fileName); os.IsNotExist(err) {
+					c.SaveFile(file, fmt.Sprintf("./%s", folder+fileName))
+					break
+				}
+				fileName = file.Filename[:len(file.Filename)-len(filepath.Ext(file.Filename))] + "_" + strconv.Itoa(i) + filepath.Ext(file.Filename)
+				i = i + 1
+			}
+			log.Println("File has been successfully uploaded to ", folder+fileName)
+			type data struct {
+				url string
+			}
+			return c.Status(201).JSON(fiber.Map{
+				"success":  1,
+				"status":   true,
+				"message":  "File has been successfully uploaded",
+				"path":     "/public/uploads/" + strconv.Itoa(year) + "/" + m + "/" + fileName,
+				"filename": fileName,
+				"id":       fileID,
+				"file":     map[string]string{"url": "/uploads/" + strconv.Itoa(year) + "/" + m + "/" + fileName},
+			})
+
+		} else {
+			return c.Status(401).JSON(fiber.Map{
+				"status":  false,
+				"message": "No file uploaded",
+			})
+		}
+	} else {
+		log.Println("Folder target not exists")
+		if f, err := os.Open(path); err == nil {
+			if files, err := f.Readdir(0); err == nil {
+				for _, v := range files {
+					log.Println(v.Name(), v.IsDir())
+				}
+			}
+		}
+		return c.Status(401).JSON(fiber.Map{
+			"status":  false,
+			"message": "Target not registered",
+		})
+	}
 }
