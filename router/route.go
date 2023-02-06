@@ -4,6 +4,7 @@ import (
 	"pradha-go/handlers"
 	"pradha-go/handlers/accounting"
 	"pradha-go/handlers/auth"
+	"pradha-go/handlers/file"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -30,4 +31,8 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/accounting/account/add", accounting.AddAccount)
 	app.Get("/accounting/account/edit/:id", accounting.EditAccount)
 	app.Get("/accounting/account/detail/:id", accounting.DetailAccount)
+
+	// file handler
+	files := app.Group("/file")
+	files.Post("/upload", file.Upload)
 }
