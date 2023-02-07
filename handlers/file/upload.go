@@ -29,7 +29,7 @@ func Upload(c *fiber.Ctx) error {
 		log.Println(path+"subdomain/"+c.FormValue("app"), "Not Exists")
 	}
 
-	if folder != "" {
+	if folder != "" && c.FormValue("app") != "" {
 		if file, err := c.FormFile("file"); err == nil {
 			year := time.Now().Year()
 			month := time.Now().Month()
@@ -59,9 +59,7 @@ func Upload(c *fiber.Ctx) error {
 				i = i + 1
 			}
 			log.Println("File has been successfully uploaded to ", folder+fileName)
-			type data struct {
-				url string
-			}
+
 			return c.Status(201).JSON(fiber.Map{
 				"success":  1,
 				"status":   true,
