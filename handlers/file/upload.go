@@ -49,7 +49,7 @@ func Upload(c *fiber.Ctx) error {
 
 			fileName := file.Filename
 			// check duplicate file name
-			i := 1
+			i := 2
 			for {
 				if _, err := os.Stat(folder + fileName); os.IsNotExist(err) {
 					c.SaveFile(file, fmt.Sprintf("./%s", folder+fileName))
