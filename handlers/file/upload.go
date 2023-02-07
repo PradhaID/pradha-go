@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gosimple/slug"
 )
 
 func Upload(c *fiber.Ctx) error {
@@ -51,7 +52,7 @@ func Upload(c *fiber.Ctx) error {
 				})
 			}
 
-			fileName := file.Filename
+			fileName := slug.Make(file.Filename[:len(file.Filename)-len(filepath.Ext(file.Filename))]) + filepath.Ext(file.Filename)
 			// check duplicate file name
 			i := 2
 			for {
@@ -59,7 +60,7 @@ func Upload(c *fiber.Ctx) error {
 					c.SaveFile(file, fmt.Sprintf("./%s", folder+fileName))
 					break
 				}
-				fileName = file.Filename[:len(file.Filename)-len(filepath.Ext(file.Filename))] + "_" + strconv.Itoa(i) + filepath.Ext(file.Filename)
+				fileName = slug.Make(file.Filename[:len(file.Filename)-len(filepath.Ext(file.Filename))]) + "_" + strconv.Itoa(i) + filepath.Ext(file.Filename)
 				i = i + 1
 			}
 			log.Println("File has been successfully uploaded to ", folder+fileName)
