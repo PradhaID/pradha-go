@@ -30,7 +30,7 @@ func Upload(c *fiber.Ctx) error {
 	}
 
 	if os.Getenv("MODE") == "local" {
-		folder = path + "subdomain/" + c.FormValue("app") + "/public/uploads/"
+		folder = path + c.FormValue("app") + "/public/uploads/"
 	}
 
 	if folder != "" && c.FormValue("app") != "" {
