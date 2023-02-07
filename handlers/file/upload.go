@@ -29,6 +29,10 @@ func Upload(c *fiber.Ctx) error {
 		log.Println(path+"subdomain/"+c.FormValue("app"), "Not Exists")
 	}
 
+	if os.Getenv("MODE") == "local" {
+		folder = path + "subdomain/" + c.FormValue("app") + "/public/uploads/"
+	}
+
 	if folder != "" && c.FormValue("app") != "" {
 		if file, err := c.FormFile("file"); err == nil {
 			year := time.Now().Year()
